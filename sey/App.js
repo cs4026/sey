@@ -12,6 +12,7 @@ export default class App extends React.Component {
        tableHead: [],
        tableData: [],
        refreshing:false,
+       widthArr:[40, 60, 80, 100, 120, 140, 160, 180, 200]
      }
      this.fetchData=this.fetchData.bind(this)
   }
@@ -63,37 +64,43 @@ export default class App extends React.Component {
       )
     }else{
       return (
-        <ScrollView
-        contentContainerStyle={{flex:1,justifyContent:'center'} }
-         refreshControl={
-           <RefreshControl
-             refreshing={this.state.refreshing}
-             onRefresh={this._onRefresh}
-           />
-         }
-         title={"HELLO"}
-         titleColor={"red"}
-          >
-          <View style={{flex:2 , justifyContent:'center',paddingLeft:20,paddingRight:20}}>
-             <Table borderStyle={{borderWidth: 2, borderColor: 'black'}}>
-               <Row data={this.state.tableHead} style={styles.head} textStyle={styles.text2}/>
-               <Rows data={this.state.tableData} textStyle={styles.text}/>
-             </Table>
-          </View>
-
-        </ScrollView>
+        <View style={styles.container}>
+          <ScrollView horizontal={true}>
+            <View>
+              <Table borderStyle={{borderColor: '#C1C0B9'}}>
+                <Row data={this.state.tableHead} widthArr={this.state.widthArr} style={styles.header} textStyle={styles.text}/>
+              </Table>
+              <ScrollView style={styles.dataWrapper}>
+                <Table borderStyle={{borderColor: '#C1C0B9'}}>
+                  {
+                    this.state.tableData.map((rowData, index) => (
+                      <Row
+                        key={index}
+                        data={rowData}
+                        widthArr={this.state.widthArr}
+                        style={[styles.row, index%2 && {backgroundColor: '#F7F6E7'}]}
+                        textStyle={styles.text}
+                      />
+                    ))
+                  }
+                </Table>
+              </ScrollView>
+            </View>
+          </ScrollView>
+        </View>
       );
     }
   }
 }
 
 /**
-<View style={{
-       flex: 1,
-       flexDirection: 'column',
-       justifyContent: 'center',
-       alignItems:'center'
-     }}>
+contentContainerStyle={{flex:1,justifyContent:'center'} }
+ refreshControl={
+   <RefreshControl
+     refreshing={this.state.refreshing}
+     onRefresh={this._onRefresh}
+   />
+ }
     **/
 
 class Tables extends React.Component{
@@ -106,6 +113,8 @@ class Tables extends React.Component{
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, paddingTop: 30 },
   head: { height: 40 },
+  dataWrapper: { marginTop: -1 },
   text2:{fontWeight:"bold"},
-  text: { margin: 6 }
+  text: { margin: 6 },
+  row: { height: 40, backgroundColor: '#E7E6E1' }
 });
