@@ -12,7 +12,7 @@ export default class App extends React.Component {
        tableHead: [],
        tableData: [],
        refreshing:false,
-       widthArr:[40, 60, 80, 100, 120, 140, 160, 180, 200]
+       widthArr:[150, 60, 80, 100, 120, 140, 160, 180, 200]
      }
      this.fetchData=this.fetchData.bind(this)
   }
@@ -64,11 +64,19 @@ export default class App extends React.Component {
       )
     }else{
       return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container}
+        contentContainerStyle={{flex:1,justifyContent:'center'} }
+         refreshControl={
+           <RefreshControl
+             refreshing={this.state.refreshing}
+             onRefresh={this._onRefresh}
+           />
+         }
+          >
           <ScrollView horizontal={true}>
             <View>
               <Table borderStyle={{borderColor: '#C1C0B9'}}>
-                <Row data={this.state.tableHead} widthArr={this.state.widthArr} style={styles.header} textStyle={styles.text}/>
+                <Row data={this.state.tableHead} widthArr={this.state.widthArr} style={styles.header} textStyle={styles.text2}/>
               </Table>
               <ScrollView style={styles.dataWrapper}>
                 <Table borderStyle={{borderColor: '#C1C0B9'}}>
@@ -78,7 +86,7 @@ export default class App extends React.Component {
                         key={index}
                         data={rowData}
                         widthArr={this.state.widthArr}
-                        style={[styles.row, index%2 && {backgroundColor: '#F7F6E7'}]}
+                        style={styles.row}
                         textStyle={styles.text}
                       />
                     ))
@@ -87,20 +95,14 @@ export default class App extends React.Component {
               </ScrollView>
             </View>
           </ScrollView>
-        </View>
+        </ScrollView>
       );
     }
   }
 }
 
 /**
-contentContainerStyle={{flex:1,justifyContent:'center'} }
- refreshControl={
-   <RefreshControl
-     refreshing={this.state.refreshing}
-     onRefresh={this._onRefresh}
-   />
- }
+
     **/
 
 class Tables extends React.Component{
@@ -116,5 +118,5 @@ const styles = StyleSheet.create({
   dataWrapper: { marginTop: -1 },
   text2:{fontWeight:"bold"},
   text: { margin: 6 },
-  row: { height: 40, backgroundColor: '#E7E6E1' }
+  row: { height: 40 }
 });
