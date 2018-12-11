@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View,TouchableHighlight,Alert,ScrollView,RefreshControl,Image } from 'react-native';
+import { StyleSheet, Text, View,TouchableWithoutFeedback,Alert,ScrollView,RefreshControl,Image,FlatList } from 'react-native';
 import axios from 'axios'
-import { Table, TableWrapper, Row, Rows, Col, Cols, Cell } from 'react-native-table-component';
+
 
 
 export default class App extends React.Component {
@@ -14,33 +14,55 @@ export default class App extends React.Component {
        refreshing:false,
        widthArr:[150, 60, 80, 100, 120, 140, 160, 180, 200]
      }
-     this.fetchData=this.fetchData.bind(this)
+     this.fetchData=this.fetchData.bind(this);
+     this.changeDetail = this.changeDetail.bind(this);
   }
 
   componentDidMount(){
     this.fetchData()
   }
+
+  changeDetail(index){
+    let table = this.state.tableHead
+    let c = table[index]
+    c.showDetail = !c.showDetail
+    this.setState({tableHead:table})
+  }
+
    fetchData() {
      this.setState({fetching:true})
-     return axios.get('http://192.168.1.38:8080',{},{
+     return axios.get('http://172.20.10.2:8080',{},{
        headers: {Connection:'keep-alive'}
       }).then((responseJson) => {
           let arr = []
           let head =[]
           responseJson.data.values.map( ( val, index ) =>{
-             if(index==0){ head=val; }
-             else{ arr.push(val) }
+            let company = val[0]
+            console.log("company",company);
+            if( company != undefined && company != "undefined" && company != ""){
+                 company = company.toLowerCase()
+                // let wl = company.length;
+                // if(wl%2!=0){
+                //   company = company+" ";
+                //   wl = company.length;
+                // }
+                // let diff = (60 - wl)/2;
+                // let r = " ".repeat(diff);
+                // company = r + company + r;
+                // console.log("LEN ",company,company.length);
+                head.push({name:company,bulk:9,retail:9,showDetail:false})
+            }
+             //else{ arr.push(val) }
            })
            this.setState({tableHead:head,tableData:arr,data:true,fetching:false})
            return Promise.resolve()
-         return Promise.resolve()
+           return Promise.resolve()
        })
        .catch((error) => {
          Alert.alert("Error")
          console.error(error);
          return Promise.resolve()
        });
-
     }
 
     _onLongPressButton() {
@@ -64,38 +86,27 @@ export default class App extends React.Component {
       )
     }else{
       return (
+
         <ScrollView style={styles.container}
-        contentContainerStyle={{flex:1,justifyContent:'center'} }
+        contentContainerStyle={{flex:1,justifyContent:'center', alignItems:"center"} }
          refreshControl={
            <RefreshControl
              refreshing={this.state.refreshing}
              onRefresh={this._onRefresh}
            />
-         }
-          >
-          <ScrollView horizontal={true}>
+         }>
+
+          <ScrollView style={{marginTop:50}} >
             <View>
-              <Table borderStyle={{borderColor: '#C1C0B9'}}>
-                <Row data={this.state.tableHead} widthArr={this.state.widthArr} style={styles.header} textStyle={styles.text2}/>
-              </Table>
-              <ScrollView style={styles.dataWrapper}>
-                <Table borderStyle={{borderColor: '#C1C0B9'}}>
-                  {
-                    this.state.tableData.map((rowData, index) => (
-                      <Row
-                        key={index}
-                        data={rowData}
-                        widthArr={this.state.widthArr}
-                        style={styles.row}
-                        textStyle={styles.text}
-                      />
-                    ))
-                  }
-                </Table>
-              </ScrollView>
+            {
+              this.state.tableHead.map( ( item , index ) =>{
+                return <Company key={index} company={item} index={index} changeDetail={this.changeDetail}/>
+              })
+            }
             </View>
           </ScrollView>
         </ScrollView>
+
       );
     }
   }
@@ -105,11 +116,38 @@ export default class App extends React.Component {
 
     **/
 
-class Tables extends React.Component{
+class Company extends React.Component{
   render(){
-    console.log(this.props.data);
-    return (<Text>{this.props.data}</Text>)
+    const index = this.props.index
+    if(!this.props.company.showDetail){
+      return (
+        <TouchableWithoutFeedback  onPress={ ()=>{ this.props.changeDetail(index) } } >
+          <View style={styles.wrap}>
+            <Text>{this.props.company.name}</Text>
+            </View>
+        </TouchableWithoutFeedback>
+      )
+    }else{
+      return (
+        <TouchableWithoutFeedback  onPress={ ()=>{ this.props.changeDetail(index) } } >
+          <View style={styles.wrap}>
+            <Text> {this.props.company.name}   </Text>
+            <Text> {this.props.company.bulk}   </Text>
+            <Text> {this.props.company.retail} </Text>
+          </View>
+        </TouchableWithoutFeedback>
+      )
+    }
   }
+}
+
+const textStyles= (word,wordLength) => {
+  let varFixed = 50;
+  varPad = varFixed - wordLength;
+  console.log(word,wordLength,varPad,varPad+wordLength);
+  return StyleSheet.create({
+    item: {borderWidth:1,marginBottom:10,fontWeight:"bold",fontSize:20,padding:varPad}
+  })
 }
 
 const styles = StyleSheet.create({
@@ -118,5 +156,7 @@ const styles = StyleSheet.create({
   dataWrapper: { marginTop: -1 },
   text2:{fontWeight:"bold"},
   text: { margin: 6 },
-  row: { height: 40 }
+  row: { height: 40 },
+  wrap: {flex:1, alignItems:'center',justifyContent:'center',padding: 20,borderWidth:1,marginBottom:10},
+  item: {fontWeight:"bold",fontSize:35,}
 });
