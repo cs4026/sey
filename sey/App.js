@@ -164,11 +164,13 @@ class Coffee extends React.Component{
     const coffee = this.props.coffee;
     const index = this.props.index;
     return (
+      <TouchableWithoutFeedback  onPress={ ()=>{ Alert.alert(coffee.bulk) } } >
       <View key={index} style={{flex:1, flexDirection:"row",alignItems:'center',justifyContent:'center',padding:5,borderWidth:1,marginBottom:10}}>
         <Text style={{width:100}}> {coffee.name}</Text>
         <Text style={{width:55}}> b: {coffee.bulk}    </Text>
         <Text style={{width:55}}> r: {coffee.retail}    </Text>
       </View>
+      </TouchableWithoutFeedback>
     )
   }
 }
