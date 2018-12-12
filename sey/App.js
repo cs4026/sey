@@ -12,7 +12,6 @@ export default class App extends React.Component {
        tableHead: [],
        tableData: [],
        refreshing:false,
-       widthArr:[150, 60, 80, 100, 120, 140, 160, 180, 200]
      }
      this.fetchData=this.fetchData.bind(this);
      this.changeDetail = this.changeDetail.bind(this);
@@ -36,23 +35,28 @@ export default class App extends React.Component {
       }).then((responseJson) => {
           let arr = []
           let head =[]
-          responseJson.data.values.map( ( val, index ) =>{
+          let companies = responseJson.data.values.filter( company =>  company[0] != undefined && company != null && company[0].length!=0 && company!= "" )
+          let coffees = responseJson.data.values[0]
+            .filter( cell => cell!="" && cell!= undefined)
+            .map(c=>{
+              return {
+                name:c.toLowerCase(),
+              }
+            })
+          companies.map( ( val, index ) =>{
+            let copyCoffee = []
             let company = val[0]
-            console.log("company",company);
-            if( company != undefined && company != "undefined" && company != ""){
-                 company = company.toLowerCase()
-                // let wl = company.length;
-                // if(wl%2!=0){
-                //   company = company+" ";
-                //   wl = company.length;
-                // }
-                // let diff = (60 - wl)/2;
-                // let r = " ".repeat(diff);
-                // company = r + company + r;
-                // console.log("LEN ",company,company.length);
-                head.push({name:company,bulk:9,retail:9,showDetail:false})
+            let coffeeLbs = val.slice(1)
+            let j = 0;
+            for(let i = 0;i<coffees.length;i++){
+              copyCoffee[i]={}
+              copyCoffee[i].name   = coffees[i].name
+              copyCoffee[i].bulk   = coffeeLbs[j]
+              copyCoffee[i].retail = coffeeLbs[j+1]
+              j = j+2
             }
-             //else{ arr.push(val) }
+            company = company.toLowerCase()
+            head.push({name:company,bulk:9,retail:9,showDetail:true,coffees:copyCoffee})
            })
            this.setState({tableHead:head,tableData:arr,data:true,fetching:false})
            return Promise.resolve()
@@ -131,9 +135,8 @@ class Company extends React.Component{
       return (
         <TouchableWithoutFeedback  onPress={ ()=>{ this.props.changeDetail(index) } } >
           <View style={styles.wrap}>
-            <Text> {this.props.company.name}   </Text>
-            <Text> {this.props.company.bulk}   </Text>
-            <Text> {this.props.company.retail} </Text>
+            <Text> {this.props.company.name}</Text>
+            <CoffeeContainer coffees={this.props.company.coffees} />
           </View>
         </TouchableWithoutFeedback>
       )
@@ -141,6 +144,35 @@ class Company extends React.Component{
   }
 }
 
+class CoffeeContainer extends React.Component{
+  render(){
+    const coffees = this.props.coffees;
+    return (
+      <View>
+        {
+          coffees.map( ( coffee , index) => {
+            return <Coffee coffee={coffee} key={index} index={index} />
+          })
+        }
+      </View>
+    )
+  }
+}
+
+class Coffee extends React.Component{
+  render(){
+    const coffee = this.props.coffee;
+    const index = this.props.index;
+    return (
+      <View key={index} style={{flex:1, flexDirection:"row",alignItems:'center',justifyContent:'center',padding:5,borderWidth:1,marginBottom:10}}>
+        <Text style={{width:125}}> {coffee.name}</Text>
+        <Text style={{width:35}}> b: {coffee.bulk}    </Text>
+        <Text style={{width:35}}> r: {coffee.retail}    </Text>
+      </View>
+    )
+  }
+}
+//<Text style={{borderWidth:1,alignSelf:'flex-end'}}> {coffee.retail}  </Text>
 const textStyles= (word,wordLength) => {
   let varFixed = 50;
   varPad = varFixed - wordLength;
@@ -157,6 +189,6 @@ const styles = StyleSheet.create({
   text2:{fontWeight:"bold"},
   text: { margin: 6 },
   row: { height: 40 },
-  wrap: {flex:1, alignItems:'center',justifyContent:'center',padding: 20,borderWidth:1,marginBottom:10},
+  wrap: {flex:1, alignItems:'center',justifyContent:'center',padding: 50,borderWidth:1,marginBottom:10},
   item: {fontWeight:"bold",fontSize:35,}
 });
