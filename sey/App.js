@@ -1,5 +1,18 @@
 import React from 'react';
-import { StyleSheet, Text, View,TouchableWithoutFeedback,Alert,ScrollView,RefreshControl,Image,FlatList } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableWithoutFeedback,
+  Alert,
+  ScrollView,
+  RefreshControl,
+  Image,
+  FlatList,
+  Modal,
+  TouchableHighlight,
+  TextInput
+} from 'react-native';
 import axios from 'axios'
 
 
@@ -12,13 +25,24 @@ export default class App extends React.Component {
        tableHead: [],
        tableData: [],
        refreshing:false,
+       modalVisible: false,
+       modalViewData: false,
+       refresh:false,
      }
      this.fetchData=this.fetchData.bind(this);
      this.changeDetail = this.changeDetail.bind(this);
+     this.modalSet=this.modalSet.bind(this);
+     this.closeModal=this.closeModal.bind(this);
+     this.refresh = this.refresh.bind(this)
   }
 
   componentDidMount(){
     this.fetchData()
+    if(this.state.refresh==true){ this.setState({refresh:false}) }
+  }
+
+  refresh(){
+    this.setState({refresh:true})
   }
 
   changeDetail(index){
@@ -30,7 +54,7 @@ export default class App extends React.Component {
 
    fetchData() {
      this.setState({fetching:true})
-     return axios.get('http://172.20.10.2:8080',{},{
+     return axios.get('http://192.168.1.9:8080',{},{
        headers: {Connection:'keep-alive'}
       }).then((responseJson) => {
           let arr = []
@@ -50,13 +74,14 @@ export default class App extends React.Component {
             let j = 0;
             for(let i = 0;i<coffees.length;i++){
               copyCoffee[i]={}
-              copyCoffee[i].name   = coffees[i].name
-              copyCoffee[i].bulk   = coffeeLbs[j]
-              copyCoffee[i].retail = coffeeLbs[j+1]
+              copyCoffee[i].name     = coffees[i].name
+              copyCoffee[i].bulk     = coffeeLbs[j]
+              copyCoffee[i].retail   = coffeeLbs[j+1]
+              copyCoffee[i].editable = false
               j = j+2
             }
             company = company.toLowerCase()
-            head.push({name:company,bulk:9,retail:9,showDetail:true,coffees:copyCoffee})
+            head.push({name:company,bulk:9,retail:9,showDetail:false,coffees:copyCoffee})
            })
            this.setState({tableHead:head,tableData:arr,data:true,fetching:false})
            return Promise.resolve()
@@ -79,6 +104,18 @@ export default class App extends React.Component {
       this.setState({refreshing: false,fetching:false});
     });
   }
+  setModalVisible(visible) {
+  this.setState({modalVisible: visible});
+  }
+
+  modalSet(index){
+    let visibility = this.state.modalVisible
+    this.setState({ modalViewData:index , modalVisible : !visibility})
+  }
+
+  closeModal(){
+    this.setState({modalVisible:false,modalViewData:false})
+  }
 
   render() {
     if(this.state.fetching){
@@ -89,8 +126,8 @@ export default class App extends React.Component {
         </View>
       )
     }else{
-      return (
 
+      return (
         <ScrollView style={styles.container}
         contentContainerStyle={{flex:1,justifyContent:'center', alignItems:"center"} }
          refreshControl={
@@ -100,11 +137,22 @@ export default class App extends React.Component {
            />
          }>
 
+         <View >
+           <Modal
+             animationType="fade"
+             transparent={false}
+             visible={this.state.modalVisible}>
+             <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+               <CompanyModal refresh={this.refresh} closeModal={this.closeModal} company={this.state.tableHead[this.state.modalViewData]} />
+             </View>
+           </Modal>
+         </View>
+
           <ScrollView style={{marginTop:50}} >
             <View>
             {
               this.state.tableHead.map( ( item , index ) =>{
-                return <Company key={index} company={item} index={index} changeDetail={this.changeDetail}/>
+                return <Company modalSet={this.modalSet} key={index} company={item} index={index} changeDetail={this.changeDetail}/>
               })
             }
             </View>
@@ -116,9 +164,86 @@ export default class App extends React.Component {
   }
 }
 
-/**
+class CompanyModal extends React.Component{
+  render(){
+    return (
+      <TouchableWithoutFeedback  onLongPress={this.props.closeModal}>
+        <View style={{height:700, alignItems:'center',justifyContent:'center',padding: 30,borderWidth:1}}>
+          <Text> {this.props.company.name}</Text>
+          <CoffeeContainerModal refresh={this.props.refresh} editCell={this.props.editCell} coffees={this.props.company.coffees} />
+        </View>
+      </TouchableWithoutFeedback>
+    )
+  }
+}
 
-    **/
+class CoffeeContainerModal extends React.Component{
+
+  render(){
+    const coffees = this.props.coffees;
+    const editCell=(index)=>{
+       const truth = coffees[index].editable
+       coffees[index].editable=!truth;
+       this.props.refresh(true)
+    }
+    return (
+      <View>
+        {
+          coffees.map( ( coffee , index) => {
+            return <CoffeeModal editCell={editCell} coffee={coffee} key={index} index={index} />
+          })
+        }
+      </View>
+    )
+  }
+}
+
+class CoffeeModal extends React.Component{
+  render(){
+    const coffee = this.props.coffee;
+    const index = this.props.index;
+    const editiable = coffee.editable;
+    let bulk = coffee.bulk
+    let retail = coffee.retail
+    if(editiable==true){
+      return(
+        <TouchableWithoutFeedback onLongPress={()=>{ this.props.editCell(index) }}>
+        <View key={index} style={{flex:1, flexDirection:"row",alignItems:'center',justifyContent:'center',padding:50,borderWidth:1,marginBottom:10}}>
+          <TouchableWithoutFeedback onPress={()=>{ this.props.editCell(index) }}>
+            <View style={{paddingRight:20}}><Text style={{fontSize:25,color:'red'}}>X</Text></View>
+          </TouchableWithoutFeedback>
+          <Text style={{width:100}}> {coffee.name}</Text>
+          <Text> b:</Text>
+          <TextInput
+             keyboardType={"numeric"}
+             placeholder={bulk}
+             onChangeText={(text) => {coffee.bulk=text}}
+             style={{width:30}}
+           />
+          <Text > r:     </Text>
+          <TextInput
+             keyboardType={"numeric"}
+             placeholder={retail}
+             onChangeText={(text) => {coffee.retail=text}}
+             style={{width:30}}
+           />
+        </View>
+        </TouchableWithoutFeedback>
+
+      )
+    }else{
+      return (
+        <TouchableWithoutFeedback onLongPress={()=>{ this.props.editCell(index) }} >
+          <View key={index} style={{flex:1, flexDirection:"row",alignItems:'center',justifyContent:'center',padding:5,borderWidth:1,marginBottom:10}}>
+            <Text style={{width:100}}> {coffee.name}</Text>
+            <Text style={{width:55}}> b: {coffee.bulk}    </Text>
+            <Text style={{width:55}}> r: {coffee.retail}    </Text>
+          </View>
+        </TouchableWithoutFeedback>
+      )
+    }
+  }
+}
 
 class Company extends React.Component{
   render(){
@@ -133,10 +258,10 @@ class Company extends React.Component{
       )
     }else{
       return (
-        <TouchableWithoutFeedback  onPress={ ()=>{ this.props.changeDetail(index) } } >
+        <TouchableWithoutFeedback  onPress={ ()=>{ this.props.changeDetail(index) } } onLongPress={()=>{this.props.modalSet(index)}}>
           <View style={styles.wrap}>
             <Text> {this.props.company.name}</Text>
-            <CoffeeContainer coffees={this.props.company.coffees} />
+            <CoffeeContainer modalSet={this.props.modalSet} companyIndex={index} setModalVisible={this.props.setModalVisible} coffees={this.props.company.coffees} />
           </View>
         </TouchableWithoutFeedback>
       )
@@ -147,24 +272,28 @@ class Company extends React.Component{
 class CoffeeContainer extends React.Component{
   render(){
     const coffees = this.props.coffees;
+    const company = this.props.companyIndex;
     return (
+      <TouchableWithoutFeedback  onLongPress={()=>{this.props.modalSet(company)}}>
       <View>
         {
           coffees.map( ( coffee , index) => {
-            return <Coffee coffee={coffee} key={index} index={index} />
+            return <Coffee company={company} modalSet={this.props.modalSet} coffee={coffee} key={index} index={index} />
           })
         }
       </View>
+      </TouchableWithoutFeedback>
     )
   }
 }
+
 
 class Coffee extends React.Component{
   render(){
     const coffee = this.props.coffee;
     const index = this.props.index;
     return (
-      <TouchableWithoutFeedback  onPress={ ()=>{ Alert.alert(coffee.bulk) } } >
+      <TouchableWithoutFeedback onLongPress={()=>{this.props.modalSet(this.props.company)}}>
       <View key={index} style={{flex:1, flexDirection:"row",alignItems:'center',justifyContent:'center',padding:5,borderWidth:1,marginBottom:10}}>
         <Text style={{width:100}}> {coffee.name}</Text>
         <Text style={{width:55}}> b: {coffee.bulk}    </Text>
