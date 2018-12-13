@@ -15,7 +15,14 @@ import {
 } from 'react-native';
 import axios from 'axios'
 
-
+function getRandomColor() {
+  var letters = '0123456789ABCDEF';
+  var color = '#';
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
 
 export default class App extends React.Component {
   constructor(props) {
@@ -81,7 +88,7 @@ export default class App extends React.Component {
               j = j+2
             }
             company = company.toLowerCase()
-            head.push({name:company,bulk:9,retail:9,showDetail:false,coffees:copyCoffee})
+            head.push({name:company,bulk:9,retail:9,showDetail:false,coffees:copyCoffee,color:getRandomColor()})
            })
            this.setState({tableHead:head,tableData:arr,data:true,fetching:false})
            return Promise.resolve()
@@ -142,8 +149,15 @@ export default class App extends React.Component {
              animationType="fade"
              transparent={false}
              visible={this.state.modalVisible}>
-             <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+             <View style={{flex:1,alignItems:'center',justifyContent:'center',flexDirection:'row'}}>
+
+               <View style={{transform:[{rotate:'-90deg'}],marginLeft:-35}}>
+               <TouchableWithoutFeedback onPress={this.closeModal}>
+                 <Text style={{fontSize:15,color:'red',borderColor:'red',borderWidth:1}}>close</Text>
+               </TouchableWithoutFeedback>
+               </View>
                <CompanyModal refresh={this.refresh} closeModal={this.closeModal} company={this.state.tableHead[this.state.modalViewData]} />
+
              </View>
            </Modal>
          </View>
@@ -169,7 +183,7 @@ class CompanyModal extends React.Component{
     return (
       <TouchableWithoutFeedback  onLongPress={this.props.closeModal}>
         <View style={{height:700, alignItems:'center',justifyContent:'center',padding: 30,borderWidth:1}}>
-          <Text> {this.props.company.name}</Text>
+          <Text style={{color:this.props.company.color}}> {this.props.company.name}</Text>
           <CoffeeContainerModal refresh={this.props.refresh} editCell={this.props.editCell} coffees={this.props.company.coffees} />
         </View>
       </TouchableWithoutFeedback>
@@ -212,13 +226,13 @@ class CoffeeModal extends React.Component{
           <TouchableWithoutFeedback onPress={()=>{ this.props.editCell(index) }}>
             <View style={{paddingRight:20}}><Text style={{fontSize:25,color:'red'}}>X</Text></View>
           </TouchableWithoutFeedback>
-          <Text style={{width:100}}> {coffee.name}</Text>
+          <Text style={{width:80}}> {coffee.name}</Text>
           <Text> b:</Text>
           <TextInput
              keyboardType={"numeric"}
              placeholder={bulk}
              onChangeText={(text) => {coffee.bulk=text}}
-             style={{width:30}}
+             style={{width:20}}
            />
           <Text > r:     </Text>
           <TextInput
@@ -252,7 +266,7 @@ class Company extends React.Component{
       return (
         <TouchableWithoutFeedback  onPress={ ()=>{ this.props.changeDetail(index) } } >
           <View style={styles.wrap}>
-            <Text>{this.props.company.name}</Text>
+            <Text style={{color:this.props.company.color}} >{this.props.company.name}</Text>
             </View>
         </TouchableWithoutFeedback>
       )
@@ -260,7 +274,7 @@ class Company extends React.Component{
       return (
         <TouchableWithoutFeedback  onPress={ ()=>{ this.props.changeDetail(index) } } onLongPress={()=>{this.props.modalSet(index)}}>
           <View style={styles.wrap}>
-            <Text> {this.props.company.name}</Text>
+            <Text style={{color:this.props.company.color}} > {this.props.company.name}</Text>
             <CoffeeContainer modalSet={this.props.modalSet} companyIndex={index} setModalVisible={this.props.setModalVisible} coffees={this.props.company.coffees} />
           </View>
         </TouchableWithoutFeedback>
